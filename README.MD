@@ -1,6 +1,9 @@
 
 
 
-# WIP project
+### !! WIP Project !!
 
-Simple tool for manage note by [Launchy]: https://www.launchy.net/
+Smart Note
+====================
+
+Simple tool for manage note by [Launchy](https://www.launchy.net/)
