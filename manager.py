@@ -78,7 +78,7 @@ def create(path, text = None):
 
 
 # setup env
-__LOCATION__ = os.path.abspath(os.path.dirname(__file__))
+__LOCATION__             = os.path.abspath(os.path.dirname(__file__))
 
 
 
@@ -152,13 +152,6 @@ def runCommand(command):
 		logging.error(str(e))
 		exit(0)
 
-	# try to do the job
-	try:
-		subprocess.run(__COMMAND__)
-	except Exception as e:
-		logging.error(str(e))
-		exit(-1)
-
 
 
 if __name__ == '__main__':
@@ -187,6 +180,13 @@ if __name__ == '__main__':
 
 
 	runCommand(cmd)
+
+	# try to do the job
+	try:
+		subprocess.run(__COMMAND__)
+	except Exception as e:
+		logging.error(str(e))
+		exit(-1)
 
 	__STACK__.save()
 
