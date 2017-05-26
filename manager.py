@@ -2,13 +2,25 @@
 
 
 
-import sys
+
+
 import subprocess
-import os
 import os.path
 import logging
 import argparse
 import configparser
+import inspect
+from enum import Enum, unique, auto
+
+
+
+
+
+@unique
+class Command(Enum):
+	OPEN    = 'open'
+	PUSH    = 'push'
+	LOG     = 'log'
 
 
 
@@ -39,29 +51,34 @@ class BufferStack(object):
 	def pop(self):
 		return self.pop()
 
+
+
 def getNewName():
+
 	import time
 	from hashlib import sha1
 
 	h = sha1()
-	h.update(b'0123456')
+	h.update(b'01234567')
 	h.update(str(time.time()).encode('utf-8'))
-	return h.hexdigest()
+	return '%s.txt' % h.hexdigest()
+
+
+
+def create(path, text = None):
+
+	if not os.path.exists(path):
+		with open(path, 'wt') as f:
+			if not (text is None):
+				f.write(str(text))
+
+	else:
+		raise Exception('File \'%s\' already exist !!' % path)
 
 
 
 # setup env
-__LOCATION__ = os.path.dirname(__file__)
-
-
-
-# __CONFIG__ = os.path.join(__LOCATION__, 'config.ini')
-
-# config = configparser.ConfigParser()
-# config.read(__CONFIG__)
-# config.sections()
-
-
+__LOCATION__ = os.path.abspath(os.path.dirname(__file__))
 
 
 
@@ -69,21 +86,14 @@ __LOCATION__ = os.path.dirname(__file__)
 __EDITOR__               = 'C:/Program Files/Notepad++/notepad++.exe'
 __OPTION__               = '-n9999999'
 
-__DEFAULT_NOTE_FILE__    = 'note.txt'
 __DEFAULT_NOTE_MESSAGE__ = '\n\n\nNEW NOTE\n\n\n'
 
+__LOG_FILE__             = os.path.join(__LOCATION__, 'note.log')
+
+
+
 __STACK__                = os.path.join(__LOCATION__, 'stack.txt')
-
 __STACK__                = BufferStack(__STACK__)
-
-
-
-
-
-# get abs path
-__DEFAULT_NOTE_FILE__ = os.path.join(__LOCATION__, __DEFAULT_NOTE_FILE__)
-
-__LOG_FILE__ = os.path.join(__LOCATION__, 'note.log')
 
 
 
@@ -104,70 +114,43 @@ __COMMAND__.append(__OPTION__)
 
 
 
-def create(path, text = None):
-	if not os.path.exists(path):
-		with open(path, 'wt') as f:
-			if not (text is None):
-				f.write(str(text))
-	else:
-		raise Exception('File \'%s\' already exist !!' % path)
-
-
-
 logging.info('goto main')
 
-if __name__ == '__main__':
-
-	# the white list of commands
-	__CMD__ = ['new', 'log', 'open', 'push']
-	
 
 
-	parser = argparse.ArgumentParser()
-	
-	parser.add_argument(
-		'cmd', type = str, nargs = '?', default = 'open',
-		help = 'it can be %s' % str(__CMD__))
+def runCommand(command):
 
-	command = parser.parse_args()
-	command = command.cmd
-
-	if not (command in __CMD__):
-		logging.info('the unknown "%s" be called' % command)
-		exit(0)
-
-
+	logging.info('call %s' % inspect.stack()[0][3])
 
 	try:
 		logging.info('run command "%s"' % command)
 
-		if command == 'open':
+		if command is Command.OPEN:
 			try:
-				create(__DEFAULT_NOTE_FILE__, __DEFAULT_NOTE_MESSAGE__)
+				__ = __STACK__.last()
+				__COMMAND__.append(__)
+
 			except:
-				pass
+				runCommand(Command.PUSH)
 
-			__COMMAND__.append(__DEFAULT_NOTE_FILE__)
-
-		elif command == 'log':
+		elif command is Command.LOG:
 			__COMMAND__.append(__LOG_FILE__)
 
-		elif command == 'push':
+		elif command is Command.PUSH:
 			__ = getNewName()
+
 			__STACK__.push(__)
+
 			__ = os.path.join(__LOCATION__, __)
 			__COMMAND__.append(__)
 			create(__, __DEFAULT_NOTE_MESSAGE__)
 			
-
 		else:
 			raise Exception('function "%s" havn\'t be implement yet.' % command)
 
 	except Exception as e:
 		logging.error(str(e))
 		exit(0)
-
-
 
 	# try to do the job
 	try:
@@ -177,7 +160,36 @@ if __name__ == '__main__':
 		exit(-1)
 
 
+
+if __name__ == '__main__':
+
+	parser = argparse.ArgumentParser()
+	parser.add_argument(
+		'cmd', type = str, nargs = '?', default = Command.OPEN,
+		help = 'it can be %s' % str(list(Command)))
+
+	__ = parser.parse_args().cmd
+	cmd = None
+	
+	if __ in Command:
+		cmd = __
+
+	else:
+		__ = str(__).upper()
+
+		try:
+			cmd = getattr(Command, __)
+
+		except:
+			logging.info('the unknown "%s" be called' % __)
+			exit(0)
+
+
+
+	runCommand(cmd)
+
 	__STACK__.save()
+
 
 
 
